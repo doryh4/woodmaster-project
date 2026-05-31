@@ -1,23 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, FormEvent, ChangeEvent } from 'react';
+// ייבוא ספריית הלקוח של Socket.IO
+import { io } from 'socket.io-client';
+
+// הגדרת כתובת השרת
+const BACKEND_URL = 'http://localhost:5000';
+
+// דרישה 1: הגדרת Interface עבור נתוני הטופס ב-TypeScript
+interface ContactFormData {
+  customerName: string;
+  phone: string;
+  jobType: string;
+  notes: string;
+}
 
 function Contact() {
-  const [formData, setFormData] = useState({
+  // הגדרת הסטייט עם הטיפוס ה-TypeScript המתאים
+  const [formData, setFormData] = useState<ContactFormData>({
     customerName: '',
     phone: '',
     jobType: 'פרגולה',
     notes: ''
   });
-  const [statusMessage, setStatusMessage] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [statusMessage, setStatusMessage] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const handleSubmit = async (e) => {
+  // דרישה 1: הגדרת טיפוס לאירוע ה-Submit של הטופס (FormEvent)
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setStatusMessage('');
 
     try {
-      // שליחת הנתונים ל-API של ה-Backend שהקמנו
-      const response = await fetch('http://localhost:5000/api/contact', {
+      // 1. שליחת הנתונים ל-API של ה-Backend לשמירה במסד הנתונים
+      const response = await fetch(`${BACKEND_URL}/api/contact`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -29,9 +45,17 @@ function Contact() {
 
       if (response.ok) {
         setStatusMessage('✅ הפנייה התקבלה בהצלחה! נחזור אליך בהקדם.');
-        // איפוס הטופס לאחר שליחה מוצלחת
+
+        // דרישה 2: חיבור בזמן אמת - שליחת הודעה ל-Socket.IO כדי שהמנהל יראה את הליד מיד!
+        // אנחנו מעבירים את הנתונים שהשרת החזיר (כולל ה-ID והתאריך שנוצרו ב-DB)
+        const socket = io(BACKEND_URL);
+        socket.emit('newLeadSubmitted', data.lead || formData);
+        
+        // ניתוק שקט של ה-socket לאחר השליחה
+        setTimeout(() => socket.disconnect(), 1000);
+
+        // איפוס הטופס
         setFormData({ customerName: '', phone: '', jobType: 'פרגולה', notes: '' });
-        e.target.reset();
       } else {
         setStatusMessage('❌ שגיאה בשליחת הטופס. אנא נסה שוב.');
       }
@@ -41,6 +65,15 @@ function Contact() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // דרישה 1: פונקציית עזר קטנה כדי לטפל בשינויים בקלט בצורה נקייה ב-TS
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   return (
@@ -60,10 +93,11 @@ function Contact() {
             <label className="block text-stone-700 font-bold mb-2">שם מלא *</label>
             <input 
               type="text" 
+              name="customerName"
               required
               value={formData.customerName}
               className="w-full p-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
-              onChange={(e) => setFormData({...formData, customerName: e.target.value})}
+              onChange={handleInputChange}
             />
           </div>
           
@@ -71,34 +105,37 @@ function Contact() {
             <label className="block text-stone-700 font-bold mb-2">טלפון *</label>
             <input 
               type="tel" 
+              name="phone"
               required
               value={formData.phone}
               className="w-full p-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
-              onChange={(e) => setFormData({...formData, phone: e.target.value})}
+              onChange={handleInputChange}
             />
           </div>
           
           <div>
             <label className="block text-stone-700 font-bold mb-2">סוג העבודה המבוקשת</label>
             <select 
+              name="jobType"
               value={formData.jobType}
               className="w-full p-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none bg-white"
-              onChange={(e) => setFormData({...formData, jobType: e.target.value})}
+              onChange={handleInputChange}
             >
-              <option>פרגולה</option>
-              <option>דק</option>
-              <option>גג רעפים</option>
-              <option>אחר</option>
+              <option value="פרגולה">פרגולה</option>
+              <option value="דק">דק</option>
+              <option value="גג רעפים">גג רעפים</option>
+              <option value="אחר">אחר</option>
             </select>
           </div>
           
           <div>
             <label className="block text-stone-700 font-bold mb-2">הערות נוספות</label>
             <textarea 
-              rows="4"
+              name="notes"
+              rows={4}
               value={formData.notes}
               className="w-full p-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
+              onChange={handleInputChange}
             ></textarea>
           </div>
           

@@ -1,16 +1,22 @@
-# React + Vite
+# גיא ועץ - פלטפורמה לניהול ועבודות עץ
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+מערכת מלאה (Full-Stack) שנבנתה עבור עסק לבניית פרגולות, דקים וגגות רעפים. המערכת כוללת אתר תדמיתי ומחירון דינמי, לצד פאנל ניהול מאובטח המציג לידים בזמן אמת.
 
-Currently, two official plugins are available:
+הפרויקט כולו מבוסס TypeScript בשני הצדדים (Frontend ו-Backend).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## טכנולוגיות בשימוש
+- Frontend: React, TypeScript, Tailwind CSS, Vite, Socket.IO-client
+- Backend: Node.js, Express, TypeScript, Mongoose, MongoDB, JWT, Multer, Socket.IO
 
-## React Compiler
+## הוראות הרצה מקומיות
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 1. הגדרת השרת (Backend)
+- היכנס לתיקיית backend בטרמינל: cd backend
+- התקן תלויות: npm install
+- ודא שקיים קובץ .env עם המשתנים: PORT, MONGO_URI, JWT_SECRET, ADMIN_USERNAME, ADMIN_PASSWORD
+- הרץ את השרת: npm run dev
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 2. הגדרת האתר (Frontend)
+- פתח טרמינל חדש בתיקיית השורש הראשית
+- התקן תלויות: npm install
+- הרץ את האתר: npm run dev

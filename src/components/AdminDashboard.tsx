@@ -1,39 +1,111 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
+// 1. ייבוא ספריית הלקוח של Socket.IO
+import { io, Socket } from 'socket.io-client';
+// ייבוא החנות הגלובלית של Zustand והטיפוס של ליד בודד
+import useLeadStore, { Lead } from '../store/useLeadStore';
+
+// הגדרת כתובת השרת הבסיסית כדי שהתמונות ייטענו ממנו כראוי
+const BACKEND_URL = 'http://localhost:5000';
+
+// הגדרת Interfaces עבור הישויות האחרות בקובץ
+interface Project {
+  _id: string;
+  title: string;
+  category: string;
+  location: string;
+  imageUrl: string;
+}
+
+interface NewProjectState {
+  title: string;
+  category: string;
+  location: string;
+  imageUrl: string;
+}
+
+interface PriceItem {
+  _id: string;
+  serviceName: string;
+  category: string;
+  priceRange: string;
+  unit: string;
+}
+
+interface NewPriceState {
+  serviceName: string;
+  category: string;
+  priceRange: string;
+  unit: string;
+}
 
 function AdminDashboard() {
   // סטייט לשמירת טוקן האבטחה
-  const [token, setToken] = useState(localStorage.getItem('adminToken') || null);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('adminToken') || null);
   
   // שדות עבור מסך ההתחברות
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loginError, setLoginError] = useState('');
+  const [username, setUsername] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [loginError, setLoginError] = useState<string>('');
 
-  // ניווט - הוספנו את האופציה 'prices'
-  const [activeTab, setActiveTab] = useState('leads'); 
-  const [leads, setLeads] = useState([]);
-  const [projects, setProjects] = useState([]); 
-  const [prices, setPrices] = useState([]); // חדש! סטייט עבור פריטי המחירון
+  // ניווט
+  const [activeTab, setActiveTab] = useState<string>('leads'); 
   
-  const fileInputRef = useRef(null);
+  // צריכת הנתונים והפונקציות מהמצב הגלובלי של Zustand
+  const leads = useLeadStore((state) => state.leads);
+  const setGlobalLeads = useLeadStore((state) => state.setLeads);
+  const addGlobalLead = useLeadStore((state) => state.addLead);
+
+  const [projects, setProjects] = useState<Project[]>([]); 
+  const [prices, setPrices] = useState<PriceItem[]>([]); // סטייט עבור פריטי המחירון
+  
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   
   // סטייט לעריכת פרויקטים
-  const [editingProjectId, setEditingProjectId] = useState(null);
-  const [newProject, setNewProject] = useState({ title: '', category: 'פרגולות', location: '', imageUrl: '' });
-  const [projectStatus, setProjectStatus] = useState('');
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [newProject, setNewProject] = useState<NewProjectState>({ title: '', category: 'פרגולות', location: '', imageUrl: '' });
+  const [projectStatus, setProjectStatus] = useState<string>('');
 
-  // חדש! סטייט לעריכה והוספה של מחירון
-  const [editingPriceId, setEditingPriceId] = useState(null);
-  const [newPrice, setNewPrice] = useState({ serviceName: '', category: 'פרגולות', priceRange: '', unit: 'מ"ר' });
-  const [priceStatus, setPriceStatus] = useState('');
+  // סטייט לעריכה והוספה של מחירון
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
+  const [newPrice, setNewPrice] = useState<NewPriceState>({ serviceName: '', category: 'פרגולות', priceRange: '', unit: 'מ"ר' });
+  const [priceStatus, setPriceStatus] = useState<string>('');
+
+  // 2. חיבור והקשבה ל-Socket.IO בזמן אמת
+  useEffect(() => {
+    if (!token) return; // מתחברים רק אם המנהל מחובר למערכת
+
+    // התחברות לשרת ה-Backend עם הגדרת טיפוס
+    const socket: Socket = io(BACKEND_URL);
+
+    // הקשבה לאירוע של ליד חדש שנכנס באתר הציבורי
+    socket.on('newLead', (newLead: Lead) => {
+      console.log('🔥 ליד חדש התקבל בזמן אמת!', newLead);
+      
+      // הוספת הליד החדש לראש הרשימה במצב הגלובלי (Zustand)
+      addGlobalLead(newLead);
+
+      // אופציונלי: השמעת צליל התראה קטן בשביל האפקט
+      try {
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav');
+        audio.play();
+      } catch (e) {
+        console.log('Audio play blocked or unsupported');
+      }
+    });
+
+    // ניקוי החיבור כשהקומפוננטה יורדת מהמסך
+    return () => {
+      socket.disconnect();
+    };
+  }, [token, addGlobalLead]);
 
   // פונקציית התחברות לשרת (Login)
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoginError('');
     try {
-      const res = await fetch('http://localhost:5000/api/admin/login', {
+      const res = await fetch(`${BACKEND_URL}/api/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
@@ -65,7 +137,7 @@ function AdminDashboard() {
   };
 
   // פונקציית עזר לביצוע בקשות Fetch מאובטחות
-  const fetchWithAuth = (url, options = {}) => {
+  const fetchWithAuth = (url: string, options: RequestInit = {}): Promise<Response> => {
     return fetch(url, {
       ...options,
       headers: {
@@ -86,56 +158,59 @@ function AdminDashboard() {
     if (!token) return;
 
     if (activeTab === 'leads') {
-      fetchWithAuth('http://localhost:5000/api/admin/leads')
+      fetchWithAuth(`${BACKEND_URL}/api/admin/leads`)
         .then(res => res.json())
-        .then(data => setLeads(Array.isArray(data) ? data : []))
+        .then(data => setGlobalLeads(Array.isArray(data) ? data : []))
         .catch(err => console.error(err));
     } else if (activeTab === 'add-project') {
-      fetch('http://localhost:5000/api/projects') 
+      fetch(`${BACKEND_URL}/api/projects`) 
         .then(res => res.json())
         .then(data => setProjects(Array.isArray(data) ? data : []))
         .catch(err => console.error(err));
     } else if (activeTab === 'prices') {
-      // טעינת המחירון מהשרת
-      fetch('http://localhost:5000/api/prices') 
+      fetch(`${BACKEND_URL}/api/prices`) 
         .then(res => res.json())
         .then(data => setPrices(Array.isArray(data) ? data : []))
         .catch(err => console.error(err));
     }
-  }, [activeTab, token]);
+  }, [activeTab, token, setGlobalLeads]);
 
   // ==========================================
-  //         לוגיקת ניהול לידים
+  //          לוגיקת ניהול לידים
   // ==========================================
-  const handleStatusChange = async (id, currentStatus) => {
+  const handleStatusChange = async (id: string | undefined, currentStatus: string | undefined) => {
+    if (!id) return;
     const nextStatus = currentStatus === 'חדש' ? 'טופל' : 'חדש';
     try {
-      const res = await fetchWithAuth(`http://localhost:5000/api/admin/leads/${id}`, {
+      const res = await fetchWithAuth(`${BACKEND_URL}/api/admin/leads/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: nextStatus })
       });
       if (res.ok) {
-        setLeads(leads.map(lead => lead._id === id ? { ...lead, status: nextStatus } : lead));
+        setGlobalLeads(leads.map(lead => lead._id === id ? { ...lead, status: nextStatus } : lead));
       }
     } catch (err) { console.error(err); }
   };
 
-  const handleDeleteLead = async (id) => {
+  const handleDeleteLead = async (id: string | undefined) => {
+    if (!id) return;
     if (!window.confirm('האם אתה בטוח שברצונך למחוק את הליד הזה?')) return;
     try {
-      const res = await fetchWithAuth(`http://localhost:5000/api/admin/leads/${id}`, { method: 'DELETE' });
-      if (res.ok) setLeads(leads.filter(lead => lead._id !== id));
+      const res = await fetchWithAuth(`${BACKEND_URL}/api/admin/leads/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setGlobalLeads(leads.filter(lead => lead._id !== id));
+      }
     } catch (err) { console.error(err); }
   };
 
   // ==========================================
-  //         לוגיקת ניהול פרויקטים
+  //          לוגיקת ניהול פרויקטים
   // ==========================================
-  const handleDeleteProject = async (id) => {
+  const handleDeleteProject = async (id: string) => {
     if (!window.confirm('האם אתה בטוח שברצונך למחוק את הפרויקט הזה לצמיתות מהאתר?')) return;
     try {
-      const res = await fetchWithAuth(`http://localhost:5000/api/admin/projects/${id}`, { method: 'DELETE' });
+      const res = await fetchWithAuth(`${BACKEND_URL}/api/admin/projects/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setProjects(projects.filter(project => project._id !== id));
         setProjectStatus('✅ הפרויקט נמחק בהצלחה מהאתר!');
@@ -145,7 +220,7 @@ function AdminDashboard() {
     } catch (err) { console.error(err); }
   };
 
-  const startEditProject = (project) => {
+  const startEditProject = (project: Project) => {
     setEditingProjectId(project._id);
     setNewProject({ title: project.title, category: project.category, location: project.location, imageUrl: project.imageUrl });
     setProjectStatus('✏️ עורך כעת את: ' + project.title);
@@ -159,8 +234,8 @@ function AdminDashboard() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0];
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
 
     setProjectStatus('מעלה תמונה לשרת...');
@@ -168,7 +243,7 @@ function AdminDashboard() {
     formData.append('image', file);
 
     try {
-      const res = await fetchWithAuth('http://localhost:5000/api/admin/upload', {
+      const res = await fetchWithAuth(`${BACKEND_URL}/api/admin/upload`, {
         method: 'POST',
         body: formData
       });
@@ -182,14 +257,14 @@ function AdminDashboard() {
     }
   };
 
-  const handleProjectSubmit = async (e) => {
+  const handleProjectSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newProject.imageUrl) return;
 
     if (editingProjectId) {
       setProjectStatus('מעדכן פרויקט...');
       try {
-        const res = await fetchWithAuth(`http://localhost:5000/api/admin/projects/${editingProjectId}`, {
+        const res = await fetchWithAuth(`${BACKEND_URL}/api/admin/projects/${editingProjectId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newProject)
@@ -204,7 +279,7 @@ function AdminDashboard() {
     } else {
       setProjectStatus('שומר פרויקט...');
       try {
-        const res = await fetchWithAuth('http://localhost:5000/api/admin/projects', {
+        const res = await fetchWithAuth(`${BACKEND_URL}/api/admin/projects`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newProject)
@@ -221,9 +296,9 @@ function AdminDashboard() {
   };
 
   // ==========================================
-  //    חדש! לוגיקת ניהול ועריכת מחירון
+  //        לוגיקת ניהול ועריכת מחירון
   // ==========================================
-  const startEditPrice = (priceItem) => {
+  const startEditPrice = (priceItem: PriceItem) => {
     setEditingPriceId(priceItem._id);
     setNewPrice({
       serviceName: priceItem.serviceName,
@@ -241,10 +316,10 @@ function AdminDashboard() {
     setPriceStatus('');
   };
 
-  const handleDeletePrice = async (id) => {
+  const handleDeletePrice = async (id: string) => {
     if (!window.confirm('האם אתה בטוח שברצונך למחוק את פריט המחירון הזה?')) return;
     try {
-      const res = await fetchWithAuth(`http://localhost:5000/api/admin/prices/${id}`, { method: 'DELETE' });
+      const res = await fetchWithAuth(`${BACKEND_URL}/api/admin/prices/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setPrices(prices.filter(p => p._id !== id));
         setPriceStatus('✅ הפריט נמחק בהצלחה מהמחירון!');
@@ -254,12 +329,12 @@ function AdminDashboard() {
     } catch (err) { console.error(err); }
   };
 
-  const handlePriceSubmit = async (e) => {
+  const handlePriceSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (editingPriceId) {
       setPriceStatus('מעדכן מחירון...');
       try {
-        const res = await fetchWithAuth(`http://localhost:5000/api/admin/prices/${editingPriceId}`, {
+        const res = await fetchWithAuth(`${BACKEND_URL}/api/admin/prices/${editingPriceId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newPrice)
@@ -274,7 +349,7 @@ function AdminDashboard() {
     } else {
       setPriceStatus('מוסיף פריט למחירון...');
       try {
-        const res = await fetchWithAuth('http://localhost:5000/api/admin/prices', {
+        const res = await fetchWithAuth(`${BACKEND_URL}/api/admin/prices`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newPrice)
@@ -289,6 +364,11 @@ function AdminDashboard() {
     }
   };
 
+  const getFullImageUrl = (url: string): string => {
+    if (!url) return 'https://via.placeholder.com/150';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return url.startsWith('/') ? `${BACKEND_URL}${url}` : `${BACKEND_URL}/${url}`;
+  };
 
   // --- מצב 1: מסך התחברות (Login Form) ---
   if (!token) {
@@ -373,7 +453,7 @@ function AdminDashboard() {
           </button>
         </div>
 
-        {/* ניווט בין לשוניות (עודכן ל-3 לשוניות) */}
+        {/* ניווט בין לשוניות */}
         <div className="flex justify-center flex-wrap gap-3 mb-8">
           <button 
             onClick={() => setActiveTab('leads')}
@@ -493,7 +573,7 @@ function AdminDashboard() {
                   />
                   
                   <div 
-                    onClick={() => fileInputRef.current.click()}
+                    onClick={() => fileInputRef.current?.click()}
                     className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2
                       ${newProject.imageUrl 
                         ? 'border-green-400 bg-green-50/50' 
@@ -502,7 +582,7 @@ function AdminDashboard() {
                   >
                     {newProject.imageUrl ? (
                       <div className="flex flex-col items-center gap-2">
-                        <img src={newProject.imageUrl} alt="תצוגה מקדימה" className="w-24 h-24 object-cover rounded-lg shadow-md border border-green-200" />
+                        <img src={getFullImageUrl(newProject.imageUrl)} alt="תצוגה מקדימה" className="w-24 h-24 object-cover rounded-lg shadow-md border border-green-200" />
                         <span className="text-xs text-green-700 font-bold">לחץ כאן להחלפת תמונה</span>
                       </div>
                     ) : (
@@ -542,7 +622,12 @@ function AdminDashboard() {
                   {projects.map(project => (
                     <div key={project._id} className={`flex items-center justify-between p-3 rounded-lg border transition ${editingProjectId === project._id ? 'border-orange-400 bg-orange-50/40' : 'bg-stone-50 hover:bg-stone-100'}`}>
                       <div className="flex items-center gap-3">
-                        <img src={project.imageUrl} alt="" className="w-12 h-12 object-cover rounded border bg-white" onError={(e) => { e.target.src = '/hero-bg.png'; }} />
+                        <img 
+                          src={getFullImageUrl(project.imageUrl)} 
+                          alt="" 
+                          className="w-12 h-12 object-cover rounded border bg-white" 
+                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150'; }} 
+                        />
                         <div>
                           <h4 className="font-bold text-stone-900 text-sm">{project.title}</h4>
                           <p className="text-xs text-stone-500">{project.category} • {project.location}</p>
@@ -564,7 +649,7 @@ function AdminDashboard() {
           </div>
         )}
 
-        {/* חדש לגמרי! לשונית 3: ניהול ועריכת מחירון */}
+        {/* לשונית 3: ניהול ועריכת מחירון */}
         {activeTab === 'prices' && (
           <div className="space-y-8 max-w-xl mx-auto">
             {/* טופס הוספה / עריכת פריט מחירון */}
@@ -639,21 +724,16 @@ function AdminDashboard() {
 
             {/* תצוגת רשימת המחירון הקיים */}
             <div className="bg-white rounded-xl shadow-sm border p-6">
-              <h3 className="text-lg font-bold text-stone-800 mb-4 pb-2 border-b">פריטים קיימים במחירון האתר ({prices.length})</h3>
+              <h3 className="text-lg font-bold text-stone-800 mb-4 pb-2 border-b">פריטים קיימים במחירון ({prices.length})</h3>
               {prices.length === 0 ? (
-                <p className="text-stone-500 text-center text-sm py-4">אין פריטים במחירון להצגה.</p>
+                <p className="text-stone-500 text-center text-sm py-4">אין פריטים במחירון כרגע.</p>
               ) : (
                 <div className="space-y-3 max-h-96 overflow-y-auto pl-2">
                   {prices.map(priceItem => (
-                    <div key={priceItem._id} className={`flex items-center justify-between p-4 rounded-lg border transition ${editingPriceId === priceItem._id ? 'border-orange-400 bg-orange-50/40' : 'bg-stone-50 hover:bg-stone-100'}`}>
+                    <div key={priceItem._id} className={`flex items-center justify-between p-3 rounded-lg border transition ${editingPriceId === priceItem._id ? 'border-orange-400 bg-orange-50/40' : 'bg-stone-50 hover:bg-stone-100'}`}>
                       <div>
                         <h4 className="font-bold text-stone-900 text-sm">{priceItem.serviceName}</h4>
-                        <p className="text-xs text-stone-500 mt-0.5">
-                          קטגוריה: <span className="font-medium text-stone-700">{priceItem.category}</span> | יחידה: <span className="font-medium text-stone-700">{priceItem.unit}</span>
-                        </p>
-                        <p className="text-sm font-extrabold text-stone-800 mt-1">
-                          ₪ {priceItem.priceRange} <span className="text-xs font-normal text-stone-500">לכל {priceItem.unit}</span>
-                        </p>
+                        <p className="text-xs text-stone-500">{priceItem.category} • {priceItem.priceRange} ₪ ל-{priceItem.unit}</p>
                       </div>
                       <div className="flex gap-1">
                         <button onClick={() => startEditPrice(priceItem)} className="p-2 text-stone-600 hover:bg-stone-200 rounded-lg transition" title="ערוך פריט">

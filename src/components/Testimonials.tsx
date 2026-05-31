@@ -1,37 +1,47 @@
 import React from 'react';
 
-function Testimonials() {
-  const reviews = [
-    {
-      id: 1,
-      name: "יוסי כהן",
-      project: "פרגולת עץ בגינה",
-      text: "עבודה מקצועית ביותר! הצוות הגיע בזמן, סיים את העבודה צ'יק צ'ק והשאיר את הגינה נקייה. הפרגולה נראית מדהים.",
-      stars: 5
-    },
-    {
-      id: 2,
-      name: "מיכל לוי",
-      project: "דק איפאה מסביב לבריכה",
-      text: "היושרה והדיוק של גיא ועץ פשוט מרשימים. הכל בוצע בדיוק לפי התוכנית והמחיר היה הוגן מאוד.",
-      stars: 5
-    },
-    {
-      id: 3,
-      name: "אבי גבאי",
-      project: "חידוש גג רעפים",
-      text: "אחרי שנים של נזילות, סוף סוף יש לנו שקט. מקצוענים אמיתיים שמבינים עניין. ממליץ בחום!",
-      stars: 5
-    }
-  ];
+// 1. הגדרת המבנה של המלצה בודדת
+interface Review {
+  id: number;
+  name: string;
+  project: string;
+  text: string;
+  stars: number;
+}
 
+// 2. הוצאת הנתונים מחוץ לקומפוננטה והגדרת הטיפוס כמערך של Review
+const REVIEWS_DATA: Review[] = [
+  {
+    id: 1,
+    name: "יוסי כהן",
+    project: "פרגולת עץ בגינה",
+    text: "עבודה מקצועית ביותר! הצוות הגיע בזמן, סיים את העבודה צ'יק צ'ק והשאיר את הגינה נקייה. הפרגולה נראית מדהים.",
+    stars: 5
+  },
+  {
+    id: 2,
+    name: "מיכל לוי",
+    project: "דק איפאה מסביב לבריכה",
+    text: "היושרה והדיוק של גיא ועץ פשוט מרשימים. הכל בוצע בדיוק לפי התוכנית והמחיר היה הוגן מאוד.",
+    stars: 5
+  },
+  {
+    id: 3,
+    name: "אבי גבאי",
+    project: "חידוש גג רעפים",
+    text: "אחרי שנים של נזילות, סוף סוף יש לנו שקט. מקצוענים אמיתיים שמבינים עניין. ממליץ בחום!",
+    stars: 5
+  }
+];
+
+function Testimonials(): React.JSX.Element {
   return (
     <section className="py-20 bg-stone-100">
       <div className="container mx-auto px-4">
         <h3 className="text-3xl md:text-4xl font-bold text-center mb-16 text-stone-800">לקוחות ממליצים</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {reviews.map((review) => (
+          {REVIEWS_DATA.map((review) => (
             <div key={review.id} className="bg-white p-8 rounded-2xl shadow-sm border border-stone-200 flex flex-col justify-between">
               <div>
                 <div className="flex text-orange-400 mb-4">

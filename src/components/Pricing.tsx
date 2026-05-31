@@ -1,18 +1,27 @@
 import React, { useState, useEffect } from 'react';
 
-function Pricing() {
-  const [priceList, setPriceList] = useState([]); // State לשמירת המחירון מה-DB
-  const [loading, setLoading] = useState(true);
+// 1. הגדרת הטיפוס של פריט במחירון כפי שהוא מגיע מה-DB
+interface PriceItem {
+  _id: string;
+  serviceName: string;
+  priceRange: string;
+  unit?: string; // סימן השאלה אומר שהשדה אופציונלי (יכול להיות undefined)
+}
+
+function Pricing(): React.JSX.Element {
+  // 2. הגדרת הטיפוס של ה-State כמערך של PriceItem
+  const [priceList, setPriceList] = useState<PriceItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   // משיכת המחירון המעודכן מה-Backend בזמן טעינת המסך
   useEffect(() => {
     fetch('http://localhost:5000/api/prices')
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data: PriceItem[]) => {
         setPriceList(data);
         setLoading(false);
       })
-      .catch(err => {
+      .catch((err) => {
         console.error('Error fetching prices:', err);
         setLoading(false);
       });

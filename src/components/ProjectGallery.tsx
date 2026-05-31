@@ -1,20 +1,33 @@
 import React, { useState, useEffect } from 'react';
 
-function ProjectGallery() {
-  const [filter, setFilter] = useState('הכל');
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [projects, setProjects] = useState([]); // ה-State שבו יישמרו הפרויקטים מהמסד נתונים
-  const [loading, setLoading] = useState(true);
+// 1. הגדרת המבנה של פרויקט שמגיע מה-DB
+interface Project {
+  _id: string;
+  title: string;
+  category: string;
+  imageUrl: string;
+  location: string;
+}
+
+function ProjectGallery(): React.JSX.Element {
+  const [filter, setFilter] = useState<string>('הכל');
+  
+  // 2. תמונה שנבחרה יכולה להיות string (נתיב התמונה) או null כששום תמונה לא פתוחה
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  
+  // 3. ה-State של הפרויקטים מוגדר כמערך של פרויקטים
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   // משיכת הנתונים מה-Backend בזמן טעינת המסך
   useEffect(() => {
     fetch('http://localhost:5000/api/projects')
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data: Project[]) => {
         setProjects(data);
         setLoading(false);
       })
-      .catch(err => {
+      .catch((err) => {
         console.error('Error fetching projects:', err);
         setLoading(false);
       });
@@ -22,9 +35,9 @@ function ProjectGallery() {
 
   const filteredProjects = filter === 'הכל' 
     ? projects 
-    : projects.filter(p => p.category === filter);
+    : projects.filter((p) => p.category === filter);
 
-  const categories = ['הכל', 'פרגולות', 'דקים', 'גגות'];
+  const categories: string[] = ['הכל', 'פרגולות', 'דקים', 'גגות'];
 
   if (loading) {
     return (
@@ -59,7 +72,7 @@ function ProjectGallery() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-right" dir="rtl">
           {filteredProjects.map((project) => (
             <div 
-              key={project._id} // שימוש ב-_id ש-MongoDB מייצר אוטומטית
+              key={project._id}
               className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all cursor-pointer border border-stone-200"
               onClick={() => setSelectedImage(project.imageUrl)}
             >
