@@ -13,6 +13,4 @@ COPY . .
 
 # בניית ה-TypeScript
 RUN npm run build
-
-# פקודת הרצה מפורשת
-CMD ["node", "dist/index.js"]
+CMD ["npm", "start"]
