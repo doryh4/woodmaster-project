@@ -1,12 +1,18 @@
-FROM node:18-alpine
+FROM node:20.12.0
 
 WORKDIR /usr/src/app
 
+# העתקת קבצי ההגדרות
 COPY package*.json ./
+
+# התקנה נקייה
 RUN npm install
 
+# העתקת כל הקוד
 COPY . .
 
-# כאן אנחנו אומרים ל-Docker להשתמש ב-ts-node כדי להריץ את ה-index.ts
-# זה הפתרון הכי פשוט כרגע כדי לא להסתבך עם הגדרות build
-CMD ["npx", "ts-node", "index.ts"]
+# בניית ה-TypeScript
+RUN npm run build
+
+# פקודת הרצה מפורשת
+CMD ["node", "dist/index.js"]

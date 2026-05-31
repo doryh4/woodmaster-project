@@ -1,5 +1,8 @@
 {
   "name": "guy-vaetz-server",
+  "engines": {
+  "node": "20.x"
+},
   "version": "1.0.0",
   "description": "",
   "main": "index.ts",

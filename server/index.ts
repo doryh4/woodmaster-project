@@ -1,3 +1,4 @@
+import 'crypto';
 import express, { Request, Response, NextFunction } from 'express';
 import mongoose, { Document } from 'mongoose';
 import cors from 'cors';
