@@ -1,14 +1,10 @@
 import 'crypto';
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import multer from 'multer';
-import path from 'path';
-import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
 import http from 'http';
 import { Server } from 'socket.io';
-
+import dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -17,43 +13,49 @@ const server = http.createServer(app);
 
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// --- חיבור ל-MongoDB (נפרד מהשרת) ---
-if (process.env.MONGO_URI) {
-  mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('✅ Connected to MongoDB'))
-    .catch(err => console.error('❌ MongoDB error:', err));
-}
-
-mongoose.connect(process.env.MONGO_URI || '')
+// --- חיבור יחיד ותקין ל-MongoDB ---
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/guy_vaetz';
+mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ Connected to MongoDB successfully!'))
-  .catch((err) => console.error('❌ Connection failed:', err)); // זה יכתוב לנו את השגיאה!
+  .catch((err) => console.error('❌ Connection failed:', err));
 
-// --- הגדרת Socket.IO ויתר ה-API שלך ---
+// --- הגדרת המודל (חייב להופיע כאן כדי שהשרת יכיר את מבנה הפרויקט) ---
+const projectSchema = new mongoose.Schema({
+  title: String,
+  category: String,
+  location: String,
+  imageUrl: String,
+  createdAt: { type: Date, default: Date.now }
+});
+const Project = mongoose.model('Project', projectSchema);
+
+// --- Socket.IO ---
 const io = new Server(server, { cors: { origin: "*", methods: ["GET", "POST"] } });
 
-// [כאן יבואו כל ה-app.get/post שלך...]
-// חשוב: לא לשנות שום לוגיקה פה, רק להעתיק את ה-routes שלך
-
-// --- התיקון הקריטי להרצה ב-Railway ---
-const PORT = Number(process.env.PORT) || 8080;
-
-
-app.get('/', (req: any, res: any) => {
+// --- Routes ---
+app.get('/', (req : any, res : any) => {
   res.send('Woodmaster Server is UP and Running!');
 });
 
-// שימוש ב-listen שמחכה לחיבור בצורה יציבה
+// הנתיב שמושך נתונים אמיתיים ממסד הנתונים
+app.get('/api/projects', async (req : any, res : any) => {
+  try {
+    const projects = await Project.find({}); 
+    res.json(projects);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch projects" });
+  }
+});
+
+// --- הרצה ---
+const PORT = Number(process.env.PORT) || 8080;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server is running on port ${PORT}`);
 });
 
-// טיפול בכיבוי יזום כדי שלא נקבל SIGTERM
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
   server.close(() => {
-    // התיקון: הסרנו את ה-'false'
     mongoose.connection.close().then(() => {
       console.log('MongoDB connection closed.');
       process.exit(0);
