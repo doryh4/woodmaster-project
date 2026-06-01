@@ -21,7 +21,7 @@ function ProjectGallery(): React.JSX.Element {
 
   // משיכת הנתונים מה-Backend בזמן טעינת המסך
   useEffect(() => {
-    fetch('http://localhost:5000/api/projects')
+    fetch('https://woodmaster-project.onrender.com/api/projects')
       .then((res) => res.json())
       .then((data: Project[]) => {
         setProjects(data);

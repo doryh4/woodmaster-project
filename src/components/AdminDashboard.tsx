@@ -5,7 +5,7 @@ import { io, Socket } from 'socket.io-client';
 import useLeadStore, { Lead } from '../store/useLeadStore';
 
 // הגדרת כתובת השרת הבסיסית כדי שהתמונות ייטענו ממנו כראוי
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = 'https://woodmaster-project.onrender.com/';
 
 // הגדרת Interfaces עבור הישויות האחרות בקובץ
 interface Project {

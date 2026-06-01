@@ -3,7 +3,7 @@ import React, { useState, FormEvent, ChangeEvent } from 'react';
 import { io } from 'socket.io-client';
 
 // הגדרת כתובת השרת
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = 'https://woodmaster-project.onrender.com/';
 
 // דרישה 1: הגדרת Interface עבור נתוני הטופס ב-TypeScript
 interface ContactFormData {

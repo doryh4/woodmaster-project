@@ -15,7 +15,7 @@ function Pricing(): React.JSX.Element {
 
   // משיכת המחירון המעודכן מה-Backend בזמן טעינת המסך
   useEffect(() => {
-    fetch('http://localhost:5000/api/prices')
+    fetch('https://woodmaster-project.onrender.com/api/prices')
       .then((res) => res.json())
       .then((data: PriceItem[]) => {
         setPriceList(data);
