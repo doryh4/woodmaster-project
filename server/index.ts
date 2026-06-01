@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 import http from 'http';
 import { Server } from 'socket.io';
 
+
 dotenv.config();
 
 const app = express();
@@ -37,6 +38,11 @@ const io = new Server(server, { cors: { origin: "*", methods: ["GET", "POST"] } 
 
 // --- התיקון הקריטי להרצה ב-Railway ---
 const PORT = Number(process.env.PORT) || 8080;
+
+
+app.get('/', (req: any, res: any) => {
+  res.send('Woodmaster Server is UP and Running!');
+});
 
 // שימוש ב-listen שמחכה לחיבור בצורה יציבה
 server.listen(PORT, '0.0.0.0', () => {
