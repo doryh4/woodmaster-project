@@ -25,6 +25,10 @@ if (process.env.MONGO_URI) {
     .catch(err => console.error('❌ MongoDB error:', err));
 }
 
+mongoose.connect(process.env.MONGO_URI || '')
+  .then(() => console.log('✅ Connected to MongoDB successfully!'))
+  .catch((err) => console.error('❌ Connection failed:', err)); // זה יכתוב לנו את השגיאה!
+
 // --- הגדרת Socket.IO ויתר ה-API שלך ---
 const io = new Server(server, { cors: { origin: "*", methods: ["GET", "POST"] } });
 
