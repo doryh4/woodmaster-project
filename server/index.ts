@@ -72,7 +72,7 @@ const authMiddleware = (req: any, res: any, next: any) => {
 };
 
 const STATIC_DIR = path.join(process.cwd(), 'dist');
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const UPLOADS_DIR = path.join(STATIC_DIR, 'uploads');
 
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
@@ -231,7 +231,6 @@ app.get('/api/seed-now', async (_req: any, res: any) => {
 
 console.log('All API routes registered');
 
-app.use('/uploads', express.static(UPLOADS_DIR));
 app.use(express.static(STATIC_DIR));
 
 app.use((_req: any, res: any) => {
