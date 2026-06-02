@@ -1,6 +1,6 @@
 import React, { useState, FormEvent, ChangeEvent } from 'react';
 
-const BACKEND_URL = 'https://woodmaster-project.onrender.com';
+const BACKEND_URL = '';
 
 interface ContactFormData {
   customerName: string;

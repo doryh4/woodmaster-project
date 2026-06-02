@@ -15,7 +15,7 @@ function ProjectGallery(): React.JSX.Element {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetch('https://woodmaster-project.onrender.com/api/projects')
+    fetch('/api/projects')
       .then((res) => res.json())
       .then((data: Project[]) => {
         setProjects(data);

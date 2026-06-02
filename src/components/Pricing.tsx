@@ -12,7 +12,7 @@ function Pricing(): React.JSX.Element {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetch('https://woodmaster-project.onrender.com/api/prices')
+    fetch('/api/prices')
       .then((res) => res.json())
       .then((data: PriceItem[]) => {
         setPriceList(data);

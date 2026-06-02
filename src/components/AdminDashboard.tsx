@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'reac
 import { io, Socket } from 'socket.io-client';
 import useLeadStore, { Lead } from '../store/useLeadStore';
 
-const BACKEND_URL = 'https://woodmaster-project.onrender.com';
+const BACKEND_URL = '';
 
 interface Project {
   _id: string;
@@ -61,7 +61,7 @@ function AdminDashboard() {
   useEffect(() => {
     if (!token) return;
 
-    const socket: Socket = io(BACKEND_URL);
+    const socket: Socket = io();
 
     socket.on('newLead', (newLead: Lead) => {
       addGlobalLead(newLead);
