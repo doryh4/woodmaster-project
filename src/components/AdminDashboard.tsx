@@ -125,23 +125,21 @@ function AdminDashboard() {
   useEffect(() => {
     if (!token) return;
 
-    if (activeTab === 'leads') {
-      fetchWithAuth(`${BACKEND_URL}/api/admin/leads`)
-        .then(res => res.json())
-        .then(data => setGlobalLeads(Array.isArray(data) ? data : []))
-        .catch(err => console.error(err));
-    } else if (activeTab === 'add-project') {
-      fetch(`${BACKEND_URL}/api/projects`)
-        .then(res => res.json())
-        .then(data => setProjects(Array.isArray(data) ? data : []))
-        .catch(err => console.error(err));
-    } else if (activeTab === 'prices') {
-      fetch(`${BACKEND_URL}/api/prices`)
-        .then(res => res.json())
-        .then(data => setPrices(Array.isArray(data) ? data : []))
-        .catch(err => console.error(err));
-    }
-  }, [activeTab, token, setGlobalLeads]);
+    fetchWithAuth(`${BACKEND_URL}/api/admin/leads`)
+      .then(res => res.json())
+      .then(data => setGlobalLeads(Array.isArray(data) ? data : []))
+      .catch(err => console.error(err));
+
+    fetch(`${BACKEND_URL}/api/projects`)
+      .then(res => res.json())
+      .then(data => setProjects(Array.isArray(data) ? data : []))
+      .catch(err => console.error(err));
+
+    fetch(`${BACKEND_URL}/api/prices`)
+      .then(res => res.json())
+      .then(data => setPrices(Array.isArray(data) ? data : []))
+      .catch(err => console.error(err));
+  }, [token, setGlobalLeads]);
 
   const handleStatusChange = async (id: string | undefined, currentStatus: string | undefined) => {
     if (!id) return;
