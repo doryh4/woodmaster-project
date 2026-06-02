@@ -1,13 +1,11 @@
 import React from 'react';
 
-// 1. הגדרת המבנה של שירות בודד
 interface ServiceItem {
   title: string;
-  types: string[]; // מערך של מחרוזות טקסט
+  types: string[];
   description: string;
 }
 
-// 2. הוצאת המערך מחוץ לקומפוננטה והגדרת הטיפוס שלו כמערך של ServiceItem
 const SERVICES_DATA: ServiceItem[] = [
   {
     title: "פרגולות",

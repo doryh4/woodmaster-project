@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from 'react';
 
-// 1. הגדרת הטיפוס של פריט במחירון כפי שהוא מגיע מה-DB
 interface PriceItem {
   _id: string;
   serviceName: string;
   priceRange: string;
-  unit?: string; // סימן השאלה אומר שהשדה אופציונלי (יכול להיות undefined)
+  unit?: string;
 }
 
 function Pricing(): React.JSX.Element {
-  // 2. הגדרת הטיפוס של ה-State כמערך של PriceItem
   const [priceList, setPriceList] = useState<PriceItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // משיכת המחירון המעודכן מה-Backend בזמן טעינת המסך
   useEffect(() => {
     fetch('https://woodmaster-project.onrender.com/api/prices')
       .then((res) => res.json())
@@ -21,10 +18,7 @@ function Pricing(): React.JSX.Element {
         setPriceList(data);
         setLoading(false);
       })
-      .catch((err) => {
-        console.error('Error fetching prices:', err);
-        setLoading(false);
-      });
+      .catch(() => setLoading(false));
   }, []);
 
   return (
@@ -32,7 +26,7 @@ function Pricing(): React.JSX.Element {
       <div className="container mx-auto px-4 max-w-4xl">
         <h2 className="text-4xl font-bold text-center text-stone-900 mb-4">מחירון עבודות עץ</h2>
         <p className="text-center text-stone-600 mb-12">המחירים הם הערכה בלבד ומשתנים בהתאם למורכבות העבודה ותנאי השטח.</p>
-        
+
         {loading ? (
           <div className="text-center py-10 text-stone-600 font-bold" dir="rtl">
             טוען מחירון מעודכן...
@@ -57,13 +51,13 @@ function Pricing(): React.JSX.Element {
                 ))}
               </tbody>
             </table>
-            
+
             {priceList.length === 0 && (
               <p className="text-center text-stone-500 py-8">אין פריטים במחירון כרגע.</p>
             )}
           </div>
         )}
-        
+
         <div className="mt-10 p-6 bg-orange-100 rounded-xl text-orange-800 text-sm">
           * המחירים כוללים חומרים ועבודה אלא אם צוין אחרת. המחיר הסופי ייקבע לאחר פגישת ייעוץ.
         </div>

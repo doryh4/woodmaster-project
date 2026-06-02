@@ -5,13 +5,10 @@ function Navbar(): React.JSX.Element {
   return (
     <nav className="bg-stone-800 text-white p-4 shadow-md sticky top-0 z-50">
       <div className="container mx-auto flex justify-between items-center">
-        
-        {/* לוגו */}
         <Link to="/" className="flex items-center cursor-pointer hover:opacity-80 transition">
           <img src="/logo.jpg" alt="גיא ועץ לוגו" className="h-12 w-auto object-contain" />
         </Link>
 
-        {/* תפריט ניווט */}
         <ul className="flex gap-4 md:gap-8 items-center text-sm md:text-base">
           <li>
             <Link to="/" className="hover:text-orange-400 transition font-medium">דף הבית</Link>

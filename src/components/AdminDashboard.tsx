@@ -1,13 +1,9 @@
 import React, { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
-// 1. ייבוא ספריית הלקוח של Socket.IO
 import { io, Socket } from 'socket.io-client';
-// ייבוא החנות הגלובלית של Zustand והטיפוס של ליד בודד
 import useLeadStore, { Lead } from '../store/useLeadStore';
 
-// הגדרת כתובת השרת הבסיסית כדי שהתמונות ייטענו ממנו כראוי
-const BACKEND_URL = 'https://woodmaster-project.onrender.com/';
+const BACKEND_URL = 'https://woodmaster-project.onrender.com';
 
-// הגדרת Interfaces עבור הישויות האחרות בקובץ
 interface Project {
   _id: string;
   title: string;
@@ -39,68 +35,45 @@ interface NewPriceState {
 }
 
 function AdminDashboard() {
-  // סטייט לשמירת טוקן האבטחה
   const [token, setToken] = useState<string | null>(localStorage.getItem('adminToken') || null);
-  
-  // שדות עבור מסך ההתחברות
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [loginError, setLoginError] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<string>('leads');
 
-  // ניווט
-  const [activeTab, setActiveTab] = useState<string>('leads'); 
-  
-  // צריכת הנתונים והפונקציות מהמצב הגלובלי של Zustand
   const leads = useLeadStore((state) => state.leads);
   const setGlobalLeads = useLeadStore((state) => state.setLeads);
   const addGlobalLead = useLeadStore((state) => state.addLead);
 
-  const [projects, setProjects] = useState<Project[]>([]); 
-  const [prices, setPrices] = useState<PriceItem[]>([]); // סטייט עבור פריטי המחירון
-  
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [prices, setPrices] = useState<PriceItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  
-  // סטייט לעריכת פרויקטים
+
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [newProject, setNewProject] = useState<NewProjectState>({ title: '', category: 'פרגולות', location: '', imageUrl: '' });
   const [projectStatus, setProjectStatus] = useState<string>('');
 
-  // סטייט לעריכה והוספה של מחירון
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
   const [newPrice, setNewPrice] = useState<NewPriceState>({ serviceName: '', category: 'פרגולות', priceRange: '', unit: 'מ"ר' });
   const [priceStatus, setPriceStatus] = useState<string>('');
 
-  // 2. חיבור והקשבה ל-Socket.IO בזמן אמת
   useEffect(() => {
-    if (!token) return; // מתחברים רק אם המנהל מחובר למערכת
+    if (!token) return;
 
-    // התחברות לשרת ה-Backend עם הגדרת טיפוס
     const socket: Socket = io(BACKEND_URL);
 
-    // הקשבה לאירוע של ליד חדש שנכנס באתר הציבורי
     socket.on('newLead', (newLead: Lead) => {
-      console.log('🔥 ליד חדש התקבל בזמן אמת!', newLead);
-      
-      // הוספת הליד החדש לראש הרשימה במצב הגלובלי (Zustand)
       addGlobalLead(newLead);
-
-      // אופציונלי: השמעת צליל התראה קטן בשביל האפקט
       try {
         const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav');
         audio.play();
-      } catch (e) {
-        console.log('Audio play blocked or unsupported');
-      }
+      } catch {}
     });
 
-    // ניקוי החיבור כשהקומפוננטה יורדת מהמסך
-    return () => {
-      socket.disconnect();
-    };
+    return () => { socket.disconnect(); };
   }, [token, addGlobalLead]);
 
-  // פונקציית התחברות לשרת (Login)
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoginError('');
@@ -113,30 +86,26 @@ function AdminDashboard() {
       const data = await res.json();
       if (res.ok) {
         setToken(data.token);
-        localStorage.setItem('adminToken', data.token); 
+        localStorage.setItem('adminToken', data.token);
       } else {
         setLoginError(data.message || 'פרטי התחברות שגויים');
       }
-    } catch (err) {
+    } catch {
       setLoginError('שגיאה בתקשורת עם השרת');
     }
   };
 
-  // פונקציית התנתקות (Logout)
   const handleLogout = () => {
     setToken(null);
     localStorage.removeItem('adminToken');
-    
     setUsername('');
     setPassword('');
     setShowPassword(false);
     setLoginError('');
-    
     cancelEdit();
     cancelPriceEdit();
   };
 
-  // פונקציית עזר לביצוע בקשות Fetch מאובטחות
   const fetchWithAuth = (url: string, options: RequestInit = {}): Promise<Response> => {
     return fetch(url, {
       ...options,
@@ -153,7 +122,6 @@ function AdminDashboard() {
     });
   };
 
-  // טעינת מידע מהשרת בהתאם ללשונית הפעילה
   useEffect(() => {
     if (!token) return;
 
@@ -163,21 +131,18 @@ function AdminDashboard() {
         .then(data => setGlobalLeads(Array.isArray(data) ? data : []))
         .catch(err => console.error(err));
     } else if (activeTab === 'add-project') {
-      fetch(`${BACKEND_URL}/api/projects`) 
+      fetch(`${BACKEND_URL}/api/projects`)
         .then(res => res.json())
         .then(data => setProjects(Array.isArray(data) ? data : []))
         .catch(err => console.error(err));
     } else if (activeTab === 'prices') {
-      fetch(`${BACKEND_URL}/api/prices`) 
+      fetch(`${BACKEND_URL}/api/prices`)
         .then(res => res.json())
         .then(data => setPrices(Array.isArray(data) ? data : []))
         .catch(err => console.error(err));
     }
   }, [activeTab, token, setGlobalLeads]);
 
-  // ==========================================
-  //          לוגיקת ניהול לידים
-  // ==========================================
   const handleStatusChange = async (id: string | undefined, currentStatus: string | undefined) => {
     if (!id) return;
     const nextStatus = currentStatus === 'חדש' ? 'טופל' : 'חדש';
@@ -204,9 +169,6 @@ function AdminDashboard() {
     } catch (err) { console.error(err); }
   };
 
-  // ==========================================
-  //          לוגיקת ניהול פרויקטים
-  // ==========================================
   const handleDeleteProject = async (id: string) => {
     if (!window.confirm('האם אתה בטוח שברצונך למחוק את הפרויקט הזה לצמיתות מהאתר?')) return;
     try {
@@ -252,7 +214,7 @@ function AdminDashboard() {
         setNewProject(prev => ({ ...prev, imageUrl: data.imageUrl }));
         setProjectStatus('✅ התמונה הועלתה בהצלחה לשרת!');
       }
-    } catch (err) {
+    } catch {
       setProjectStatus('❌ שגיאה בהעלאת התמונה.');
     }
   };
@@ -275,7 +237,7 @@ function AdminDashboard() {
           setProjects(projects.map(p => p._id === editingProjectId ? data : p));
           cancelEdit();
         }
-      } catch (err) { setProjectStatus('❌ שגיאה בעדכון.'); }
+      } catch { setProjectStatus('❌ שגיאה בעדכון.'); }
     } else {
       setProjectStatus('שומר פרויקט...');
       try {
@@ -291,13 +253,10 @@ function AdminDashboard() {
           setNewProject({ title: '', category: 'פרגולות', location: '', imageUrl: '' });
           if (fileInputRef.current) fileInputRef.current.value = '';
         }
-      } catch (err) { setProjectStatus('❌ שגיאה בשמירה.'); }
+      } catch { setProjectStatus('❌ שגיאה בשמירה.'); }
     }
   };
 
-  // ==========================================
-  //        לוגיקת ניהול ועריכת מחירון
-  // ==========================================
   const startEditPrice = (priceItem: PriceItem) => {
     setEditingPriceId(priceItem._id);
     setNewPrice({
@@ -345,7 +304,7 @@ function AdminDashboard() {
           setPrices(prices.map(p => p._id === editingPriceId ? data : p));
           cancelPriceEdit();
         }
-      } catch (err) { setPriceStatus('❌ שגיאה בעדכון הפריט.'); }
+      } catch { setPriceStatus('❌ שגיאה בעדכון הפריט.'); }
     } else {
       setPriceStatus('מוסיף פריט למחירון...');
       try {
@@ -360,7 +319,7 @@ function AdminDashboard() {
           setPrices(prev => [data, ...prev]);
           setNewPrice({ serviceName: '', category: 'פרגולות', priceRange: '', unit: 'מ"ר' });
         }
-      } catch (err) { setPriceStatus('❌ שגיאה בשמירת הפריט.'); }
+      } catch { setPriceStatus('❌ שגיאה בשמירת הפריט.'); }
     }
   };
 
@@ -370,14 +329,13 @@ function AdminDashboard() {
     return url.startsWith('/') ? `${BACKEND_URL}${url}` : `${BACKEND_URL}/${url}`;
   };
 
-  // --- מצב 1: מסך התחברות (Login Form) ---
   if (!token) {
     return (
       <div className="min-h-screen bg-stone-100 flex items-center justify-center py-12 px-4 text-right" dir="rtl">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-md border p-8">
           <h2 className="text-2xl font-black text-stone-900 text-center mb-2">כניסת מנהל מערכת</h2>
           <p className="text-sm text-stone-500 text-center mb-6">גיא ועץ - ניהול תוכן ולידים</p>
-          
+
           <form onSubmit={handleLogin} className="space-y-4">
             {loginError && (
               <div className="p-3 bg-red-50 text-red-700 text-sm font-bold rounded border border-red-200 text-center">
@@ -386,7 +344,7 @@ function AdminDashboard() {
             )}
             <div>
               <label className="block text-sm font-bold text-stone-700 mb-1">שם משתמש</label>
-              <input 
+              <input
                 type="text" required value={username}
                 placeholder="הקלד שם משתמש"
                 className="w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-stone-900"
@@ -396,12 +354,12 @@ function AdminDashboard() {
             <div>
               <label className="block text-sm font-bold text-stone-700 mb-1">סיסמה</label>
               <div className="relative flex items-center">
-                <input 
-                  type={showPassword ? 'text' : 'password'} 
-                  required 
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
                   value={password}
                   placeholder="הקלד סיסמה"
-                  className="w-full p-2.5 pl-10 pr-3 border rounded-lg outline-none focus:ring-2 focus:ring-stone-900 text-left placeholder:text-right" 
+                  className="w-full p-2.5 pl-10 pr-3 border rounded-lg outline-none focus:ring-2 focus:ring-stone-900 text-left placeholder:text-right"
                   onChange={e => setPassword(e.target.value)}
                 />
                 <button
@@ -423,8 +381,8 @@ function AdminDashboard() {
                 </button>
               </div>
             </div>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="w-full bg-stone-900 text-white font-bold py-3 rounded-lg hover:bg-stone-800 transition"
             >
               התחבר למערכת
@@ -435,17 +393,13 @@ function AdminDashboard() {
     );
   }
 
-  // --- מצב 2: פאנל הניהול המלא ---
   return (
     <div className="min-h-screen bg-stone-100 py-12 px-4 text-right" dir="rtl">
       <div className="container mx-auto max-w-5xl">
-        
-        {/* כותרת עליונה וכפתור התנתקות */}
+
         <div className="flex justify-between items-center mb-6 border-b pb-4 border-stone-300">
-          <h2 className="text-3xl font-black text-stone-900">
-            פאנל ניהול - גיא ועץ
-          </h2>
-          <button 
+          <h2 className="text-3xl font-black text-stone-900">פאנל ניהול - גיא ועץ</h2>
+          <button
             onClick={handleLogout}
             className="px-3 py-1 bg-stone-200 hover:bg-stone-300 text-stone-700 font-bold text-xs rounded transition flex items-center gap-1"
           >
@@ -453,21 +407,20 @@ function AdminDashboard() {
           </button>
         </div>
 
-        {/* ניווט בין לשוניות */}
         <div className="flex justify-center flex-wrap gap-3 mb-8">
-          <button 
+          <button
             onClick={() => setActiveTab('leads')}
             className={`px-5 py-2 rounded-lg font-bold transition text-sm md:text-base ${activeTab === 'leads' ? 'bg-stone-900 text-white' : 'bg-white text-stone-600 border'}`}
           >
             ניהול לידים ({leads.length})
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('add-project')}
             className={`px-5 py-2 rounded-lg font-bold transition text-sm md:text-base ${activeTab === 'add-project' ? 'bg-stone-900 text-white' : 'bg-white text-stone-600 border'}`}
           >
             ניהול פרויקטים ({projects.length})
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('prices')}
             className={`px-5 py-2 rounded-lg font-bold transition text-sm md:text-base ${activeTab === 'prices' ? 'bg-stone-900 text-white' : 'bg-white text-stone-600 border'}`}
           >
@@ -475,7 +428,6 @@ function AdminDashboard() {
           </button>
         </div>
 
-        {/* לשונית 1: ניהול לידים */}
         {activeTab === 'leads' && (
           <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
             <div className="p-6 bg-stone-50 border-b">
@@ -499,13 +451,13 @@ function AdminDashboard() {
                       {lead.notes && <p className="text-stone-500 text-sm mt-2 bg-stone-100 p-2 rounded border border-dashed">{lead.notes}</p>}
                     </div>
                     <div className="flex gap-2">
-                      <button 
+                      <button
                         onClick={() => handleStatusChange(lead._id, lead.status)}
                         className={`px-4 py-1.5 rounded font-bold text-sm transition ${lead.status === 'חדש' ? 'bg-orange-100 text-orange-700 hover:bg-orange-200' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'}`}
                       >
                         {lead.status === 'חדש' ? 'סמן כטופל' : 'החזר לחדש'}
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDeleteLead(lead._id)}
                         className="px-4 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded font-bold text-sm transition"
                       >
@@ -519,7 +471,6 @@ function AdminDashboard() {
           </div>
         )}
 
-        {/* לשונית 2: הוספה וניהול פרויקטים */}
         {activeTab === 'add-project' && (
           <div className="space-y-8 max-w-xl mx-auto">
             <div className={`bg-white rounded-xl shadow-sm border p-8 transition-colors ${editingProjectId ? 'border-orange-300 bg-orange-50/10' : ''}`}>
@@ -534,7 +485,7 @@ function AdminDashboard() {
                 )}
                 <div>
                   <label className="block text-sm font-bold text-stone-700 mb-1">שם / תיאור הפרויקט</label>
-                  <input 
+                  <input
                     type="text" required value={newProject.title}
                     placeholder="לדוגמה: פרגולת קשתות מעץ אורן"
                     className="w-full p-2 border rounded outline-none focus:ring-2 focus:ring-stone-900"
@@ -543,7 +494,7 @@ function AdminDashboard() {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-stone-700 mb-1">קטגוריה</label>
-                  <select 
+                  <select
                     value={newProject.category}
                     className="w-full p-2 border rounded outline-none bg-white focus:ring-2 focus:ring-stone-900"
                     onChange={e => setNewProject({...newProject, category: e.target.value})}
@@ -555,28 +506,27 @@ function AdminDashboard() {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-stone-700 mb-1">מיקום (עיר/יישוב)</label>
-                  <input 
+                  <input
                     type="text" required value={newProject.location}
                     placeholder="לדוגמה: זכרון יעקב"
                     className="w-full p-2 border rounded outline-none focus:ring-2 focus:ring-stone-900"
                     onChange={e => setNewProject({...newProject, location: e.target.value})}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-bold text-stone-700 mb-2">תמונת הפרויקט</label>
-                  <input 
+                  <input
                     ref={fileInputRef}
                     type="file" accept="image/*"
                     className="hidden"
                     onChange={handleFileChange}
                   />
-                  
-                  <div 
+                  <div
                     onClick={() => fileInputRef.current?.click()}
                     className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2
-                      ${newProject.imageUrl 
-                        ? 'border-green-400 bg-green-50/50' 
+                      ${newProject.imageUrl
+                        ? 'border-green-400 bg-green-50/50'
                         : 'border-stone-300 bg-stone-50 hover:bg-stone-100 hover:border-stone-400'
                       }`}
                   >
@@ -595,8 +545,8 @@ function AdminDashboard() {
                 </div>
 
                 <div className="flex gap-2 pt-2">
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     disabled={!newProject.imageUrl || projectStatus === 'מעלה תמונה לשרת...'}
                     className={`font-bold py-3 rounded transition disabled:bg-stone-300 disabled:cursor-not-allowed
                       ${editingProjectId ? 'w-2/3 bg-orange-600 hover:bg-orange-700 text-white' : 'w-full bg-stone-900 text-white hover:bg-stone-800'}`}
@@ -612,7 +562,6 @@ function AdminDashboard() {
               </form>
             </div>
 
-            {/* רשימת פרויקטים קיימים */}
             <div className="bg-white rounded-xl shadow-sm border p-6">
               <h3 className="text-lg font-bold text-stone-800 mb-4 pb-2 border-b">פרויקטים קיימים באתר ({projects.length})</h3>
               {projects.length === 0 ? (
@@ -622,11 +571,11 @@ function AdminDashboard() {
                   {projects.map(project => (
                     <div key={project._id} className={`flex items-center justify-between p-3 rounded-lg border transition ${editingProjectId === project._id ? 'border-orange-400 bg-orange-50/40' : 'bg-stone-50 hover:bg-stone-100'}`}>
                       <div className="flex items-center gap-3">
-                        <img 
-                          src={getFullImageUrl(project.imageUrl)} 
-                          alt="" 
-                          className="w-12 h-12 object-cover rounded border bg-white" 
-                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150'; }} 
+                        <img
+                          src={getFullImageUrl(project.imageUrl)}
+                          alt=""
+                          className="w-12 h-12 object-cover rounded border bg-white"
+                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150'; }}
                         />
                         <div>
                           <h4 className="font-bold text-stone-900 text-sm">{project.title}</h4>
@@ -649,10 +598,8 @@ function AdminDashboard() {
           </div>
         )}
 
-        {/* לשונית 3: ניהול ועריכת מחירון */}
         {activeTab === 'prices' && (
           <div className="space-y-8 max-w-xl mx-auto">
-            {/* טופס הוספה / עריכת פריט מחירון */}
             <div className={`bg-white rounded-xl shadow-sm border p-8 transition-colors ${editingPriceId ? 'border-orange-300 bg-orange-50/10' : ''}`}>
               <h3 className="text-xl font-bold text-stone-800 mb-6">
                 {editingPriceId ? '✏️ עריכת פריט במחירון' : 'הוספת פריט חדש למחירון'}
@@ -665,7 +612,7 @@ function AdminDashboard() {
                 )}
                 <div>
                   <label className="block text-sm font-bold text-stone-700 mb-1">שם השירות / סוג העבודה</label>
-                  <input 
+                  <input
                     type="text" required value={newPrice.serviceName}
                     placeholder="לדוגמה: בניית דק מעץ איפאה"
                     className="w-full p-2 border rounded outline-none focus:ring-2 focus:ring-stone-900"
@@ -675,7 +622,7 @@ function AdminDashboard() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-stone-700 mb-1">קטגוריה</label>
-                    <select 
+                    <select
                       value={newPrice.category}
                       className="w-full p-2 border rounded outline-none bg-white focus:ring-2 focus:ring-stone-900"
                       onChange={e => setNewPrice({...newPrice, category: e.target.value})}
@@ -687,7 +634,7 @@ function AdminDashboard() {
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-stone-700 mb-1">יחידת מידה</label>
-                    <input 
+                    <input
                       type="text" required value={newPrice.unit}
                       placeholder='לדוגמה: מ"ר, קוב, גלובלי'
                       className="w-full p-2 border rounded outline-none focus:ring-2 focus:ring-stone-900"
@@ -697,18 +644,18 @@ function AdminDashboard() {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-stone-700 mb-1">טווח מחיר (בש"ח)</label>
-                  <input 
+                  <input
                     type="text" required value={newPrice.priceRange}
                     placeholder="לדוגמה: 450 - 600"
-                    className="w-full p-2 border rounded outline-none focus:ring-2 focus:ring-stone-900 text-right" 
+                    className="w-full p-2 border rounded outline-none focus:ring-2 focus:ring-stone-900 text-right"
                     onChange={e => setNewPrice({...newPrice, priceRange: e.target.value})}
                   />
                 </div>
 
                 <div className="flex gap-2 pt-2">
-                  <button 
-                    type="submit" 
-                    className={`font-bold py-3 rounded transition 
+                  <button
+                    type="submit"
+                    className={`font-bold py-3 rounded transition
                       ${editingPriceId ? 'w-2/3 bg-orange-600 hover:bg-orange-700 text-white' : 'w-full bg-stone-900 text-white hover:bg-stone-800'}`}
                   >
                     {editingPriceId ? 'עדכן פריט מחירון' : 'הוסף למחירון האתר'}
@@ -722,7 +669,6 @@ function AdminDashboard() {
               </form>
             </div>
 
-            {/* תצוגת רשימת המחירון הקיים */}
             <div className="bg-white rounded-xl shadow-sm border p-6">
               <h3 className="text-lg font-bold text-stone-800 mb-4 pb-2 border-b">פריטים קיימים במחירון ({prices.length})</h3>
               {prices.length === 0 ? (

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-// 1. הגדרת המבנה של פרויקט שמגיע מה-DB
 interface Project {
   _id: string;
   title: string;
@@ -11,15 +10,10 @@ interface Project {
 
 function ProjectGallery(): React.JSX.Element {
   const [filter, setFilter] = useState<string>('הכל');
-  
-  // 2. תמונה שנבחרה יכולה להיות string (נתיב התמונה) או null כששום תמונה לא פתוחה
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  
-  // 3. ה-State של הפרויקטים מוגדר כמערך של פרויקטים
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // משיכת הנתונים מה-Backend בזמן טעינת המסך
   useEffect(() => {
     fetch('https://woodmaster-project.onrender.com/api/projects')
       .then((res) => res.json())
@@ -27,14 +21,11 @@ function ProjectGallery(): React.JSX.Element {
         setProjects(data);
         setLoading(false);
       })
-      .catch((err) => {
-        console.error('Error fetching projects:', err);
-        setLoading(false);
-      });
+      .catch(() => setLoading(false));
   }, []);
 
-  const filteredProjects = filter === 'הכל' 
-    ? projects 
+  const filteredProjects = filter === 'הכל'
+    ? projects
     : projects.filter((p) => p.category === filter);
 
   const categories: string[] = ['הכל', 'פרגולות', 'דקים', 'גגות'];
@@ -58,9 +49,9 @@ function ProjectGallery(): React.JSX.Element {
                 key={cat}
                 onClick={() => setFilter(cat)}
                 className={`px-6 py-2 rounded-full font-bold transition-all ${
-                  filter === cat 
-                  ? 'bg-orange-600 text-white shadow-lg' 
-                  : 'bg-white text-stone-600 hover:bg-stone-200 border border-stone-200'
+                  filter === cat
+                    ? 'bg-orange-600 text-white shadow-lg'
+                    : 'bg-white text-stone-600 hover:bg-stone-200 border border-stone-200'
                 }`}
               >
                 {cat}
@@ -68,10 +59,10 @@ function ProjectGallery(): React.JSX.Element {
             ))}
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-right" dir="rtl">
           {filteredProjects.map((project) => (
-            <div 
+            <div
               key={project._id}
               className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all cursor-pointer border border-stone-200"
               onClick={() => setSelectedImage(project.imageUrl)}
@@ -95,9 +86,8 @@ function ProjectGallery(): React.JSX.Element {
           <p className="text-center text-stone-500 mt-10" dir="rtl">בקרוב יעלו פרויקטים נוספים בקטגוריה זו.</p>
         )}
 
-        {/* מנגנון ה-Lightbox */}
         {selectedImage && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4 cursor-zoom-out"
             onClick={() => setSelectedImage(null)}
           >
