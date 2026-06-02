@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 
 function Navbar(): React.JSX.Element {
   return (
-    <nav className="bg-stone-800 text-white p-4 shadow-md sticky top-0 z-50">
+    <nav className="bg-stone-800 text-white px-4 py-2 md:py-4 shadow-md sticky top-0 z-50">
       <div className="container mx-auto flex justify-between items-center">
         <Link to="/" className="flex items-center cursor-pointer hover:opacity-80 transition">
-          <img src="/logo.jpg" alt="גיא ועץ לוגו" className="h-12 w-auto object-contain" />
+          <img src="/logo.jpg" alt="גיא ועץ לוגו" className="h-7 w-auto object-contain md:h-12" />
         </Link>
 
         <ul className="flex gap-4 md:gap-8 items-center text-sm md:text-base">
