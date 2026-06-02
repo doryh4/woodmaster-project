@@ -67,12 +67,14 @@ const authMiddleware = (req: any, res: any, next: any) => {
   }
 };
 
-const uploadsDir = path.join(__dirname, 'public', 'uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+const STATIC_DIR = path.join(process.cwd(), 'dist');
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const upload = multer({
   storage: multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, uploadsDir),
+    destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
     filename: (_req, file, cb) => cb(null, `${Date.now()}${path.extname(file.originalname)}`)
   })
 });
@@ -223,10 +225,11 @@ app.get('/api/seed-now', async (_req: any, res: any) => {
   }
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(UPLOADS_DIR));
+app.use(express.static(STATIC_DIR));
 
 app.use((_req: any, res: any) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(STATIC_DIR, 'index.html'));
 });
 
 const portValue = Number(process.env.PORT) || 8080;
