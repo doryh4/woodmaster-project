@@ -225,7 +225,7 @@ app.get('/api/seed-now', async (_req: any, res: any) => {
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('*', (_req: any, res: any) => {
+app.get('/{*path}', (_req: any, res: any) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
