@@ -16,6 +16,10 @@ const server = http.createServer(app);
 
 app.use(cors());
 app.use(express.json());
+app.use((req: any, _res: any, next: any) => {
+  console.log(`[${req.method}] ${req.url}`);
+  next();
+});
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/guy_vaetz';
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-me';
