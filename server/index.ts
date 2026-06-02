@@ -225,6 +225,8 @@ app.get('/api/seed-now', async (_req: any, res: any) => {
   }
 });
 
+console.log('All API routes registered');
+
 app.use('/uploads', express.static(UPLOADS_DIR));
 app.use(express.static(STATIC_DIR));
 
